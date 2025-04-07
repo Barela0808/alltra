@@ -4,200 +4,191 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense Tracker</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
     body {
-      background: #f0f2f5;
+      font-family: Arial, sans-serif;
       padding: 20px;
+      margin: 0;
+      background-color: #f4f4f4;
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h1 {
+    h2 {
       text-align: center;
-      margin-bottom: 20px;
     }
-    .balance-section {
+    #balance-container {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       margin-bottom: 20px;
     }
-    .balance-edit {
-      display: none;
+    #balance-display {
+      font-size: 24px;
+      margin-right: 10px;
     }
-    .form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 20px;
+    #balance-edit, #save-balance {
+      padding: 5px 10px;
+      margin-left: 5px;
     }
-    .form input, .form select {
-      padding: 10px;
+    form, .transaction-list {
+      margin: 20px auto;
+      max-width: 500px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 4px;
     }
-    .form button {
-      grid-column: span 2;
-      padding: 10px;
-      background: #007bff;
+    button {
+      padding: 10px 15px;
+      background-color: #28a745;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-    .transactions {
-      margin-top: 20px;
+    button:hover {
+      background-color: #218838;
     }
-    .transaction {
-      background: #f9f9f9;
+    .transaction-item {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
       padding: 10px;
-      border-left: 5px solid #007bff;
       margin-bottom: 10px;
-      position: relative;
     }
-    .transaction .delete {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      color: red;
-      cursor: pointer;
+    .delete-btn {
+      float: right;
+      background-color: #dc3545;
     }
-    .download-btn {
-      background: green;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    @media (max-width: 600px) {
+      form, .transaction-list {
+        width: 90%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Expense Tracker</h1>
-    <div class="balance-section">
-      <h2>Balance: ₹<span id="balance">0</span></h2>
-      <div>
-        <button onclick="toggleEdit()">Edit</button>
-        <div class="balance-edit">
-          <input type="number" id="editBalance" placeholder="Enter Balance">
-          <button onclick="saveBalance()">Save</button>
-        </div>
-      </div>
-    </div><form class="form" onsubmit="addTransaction(event)">
-  <select id="type">
-    <option value="shop">Shop</option>
-    <option value="cab">Cab</option>
-    <option value="website">Website</option>
-    <option value="transport">Transport</option>
-  </select>
-  <input type="text" id="title" placeholder="Name/Details" required />
-  <input type="text" id="transactionId" placeholder="Transaction ID" required />
-  <input type="text" id="extra" placeholder="Extra Info (Product/Company/Website)" />
-  <input type="number" id="amount" placeholder="Amount" required />
-  <input type="datetime-local" id="datetime" required />
-  <button type="submit">Add Transaction</button>
-</form>
+  <h2>Expense Tracker</h2>
+  <div id="balance-container">
+    <div id="balance-display">Balance: ₹<span id="balance">0</span></div>
+    <button id="balance-edit">Edit</button>
+    <button id="save-balance" style="display:none">Save</button>
+    <input type="number" id="balance-input" style="display:none; width: 120px; margin-left: 10px;" />
+  </div>
+  <form id="transaction-form">
+    <select id="type">
+      <option value="shop">Shop</option>
+      <option value="cap">Cap</option>
+      <option value="website">Website</option>
+      <option value="transport">Transport</option>
+    </select>
+    <input type="text" id="name" placeholder="Name/Website/Product/Company" required />
+    <input type="text" id="transaction-id" placeholder="Transaction ID" required />
+    <input type="number" id="amount" placeholder="Amount" required />
+    <input type="datetime-local" id="date-time" required />
+    <button type="submit">Add Transaction</button>
+  </form>
+  <div class="transaction-list" id="transaction-list"></div>
+  <button onclick="downloadPDF()">Download PDF</button>  <script>
+    const balanceDisplay = document.getElementById("balance");
+    const balanceEditBtn = document.getElementById("balance-edit");
+    const saveBalanceBtn = document.getElementById("save-balance");
+    const balanceInput = document.getElementById("balance-input");
+    const transactionForm = document.getElementById("transaction-form");
+    const transactionList = document.getElementById("transaction-list");
 
-<div class="transactions" id="transactions"></div>
-<button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
 
-  </div>  <script>
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-    let balance = parseFloat(localStorage.getItem('balance')) || 0;
-
-    function updateBalanceDisplay() {
-      document.getElementById("balance").innerText = balance.toFixed(2);
-    }
-
-    function saveBalance() {
-      const newBalance = parseFloat(document.getElementById("editBalance").value);
-      if (!isNaN(newBalance)) {
-        balance = newBalance;
-        localStorage.setItem("balance", balance);
-        updateBalanceDisplay();
-        document.querySelector(".balance-edit").style.display = "none";
-      }
-    }
-
-    function toggleEdit() {
-      const editBox = document.querySelector(".balance-edit");
-      editBox.style.display = editBox.style.display === "none" ? "block" : "none";
-    }
-
-    function addTransaction(event) {
-      event.preventDefault();
-      const type = document.getElementById("type").value;
-      const title = document.getElementById("title").value;
-      const transactionId = document.getElementById("transactionId").value;
-      const extra = document.getElementById("extra").value;
-      const amount = parseFloat(document.getElementById("amount").value);
-      const datetime = document.getElementById("datetime").value;
-
-      const entry = { id: Date.now(), type, title, transactionId, extra, amount, datetime };
-      transactions.push(entry);
-      balance -= amount;
-
-      localStorage.setItem("transactions", JSON.stringify(transactions));
+    function updateBalance() {
+      balanceDisplay.textContent = balance.toFixed(2);
       localStorage.setItem("balance", balance);
-
-      renderTransactions();
-      updateBalanceDisplay();
-      event.target.reset();
     }
 
-    function deleteTransaction(id) {
-      const entry = transactions.find(t => t.id === id);
-      if (entry) balance += entry.amount;
-      transactions = transactions.filter(t => t.id !== id);
+    function saveTransaction() {
       localStorage.setItem("transactions", JSON.stringify(transactions));
-      localStorage.setItem("balance", balance);
-      renderTransactions();
-      updateBalanceDisplay();
     }
 
     function renderTransactions() {
-      const list = document.getElementById("transactions");
-      list.innerHTML = "";
-      transactions.forEach(t => {
+      transactionList.innerHTML = "";
+      transactions.forEach((txn, index) => {
         const div = document.createElement("div");
-        div.className = "transaction";
+        div.className = "transaction-item";
         div.innerHTML = `
-          <strong>${t.type.toUpperCase()}</strong><br>
-          ${t.title} | ₹${t.amount} <br>
-          ${t.transactionId} | ${t.extra} <br>
-          ${t.datetime}<br>
-          <span class="delete" onclick="deleteTransaction(${t.id})">✖</span>
+          <strong>${txn.type.toUpperCase()}</strong><br>
+          Name: ${txn.name}<br>
+          Transaction ID: ${txn.transactionId}<br>
+          Amount: ₹${txn.amount}<br>
+          Date & Time: ${txn.dateTime}<br>
+          <button class="delete-btn" onclick="deleteTransaction(${index})">Delete</button>
         `;
-        list.appendChild(div);
+        transactionList.appendChild(div);
       });
     }
+
+    function deleteTransaction(index) {
+      balance += parseFloat(transactions[index].amount);
+      transactions.splice(index, 1);
+      saveTransaction();
+      updateBalance();
+      renderTransactions();
+    }
+
+    balanceEditBtn.addEventListener("click", () => {
+      balanceInput.style.display = "inline-block";
+      saveBalanceBtn.style.display = "inline-block";
+      balanceInput.value = balance;
+    });
+
+    saveBalanceBtn.addEventListener("click", () => {
+      balance = parseFloat(balanceInput.value);
+      updateBalance();
+      balanceInput.style.display = "none";
+      saveBalanceBtn.style.display = "none";
+    });
+
+    transactionForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const type = document.getElementById("type").value;
+      const name = document.getElementById("name").value;
+      const transactionId = document.getElementById("transaction-id").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const dateTime = document.getElementById("date-time").value;
+      const txn = { type, name, transactionId, amount, dateTime };
+      transactions.push(txn);
+      balance -= amount;
+      saveTransaction();
+      updateBalance();
+      renderTransactions();
+      transactionForm.reset();
+    });
 
     function downloadPDF() {
-      let content = Balance: ₹${balance.toFixed(2)}\n\n;
-      transactions.forEach(t => {
-        content += Type: ${t.type}\nTitle: ${t.title}\nAmount: ₹${t.amount}\nTransaction ID: ${t.transactionId}\nExtra: ${t.extra}\nDate/Time: ${t.datetime}\n\n;
+      const win = window.open('', '', 'width=800,height=600');
+      win.document.write('<html><head><title>Transactions</title></head><body>');
+      win.document.write('<h2>Transaction List</h2>');
+      win.document.write(<p>Balance: ₹${balance.toFixed(2)}</p>);
+      transactions.forEach((txn, index) => {
+        win.document.write(`<p><strong>${txn.type.toUpperCase()}</strong><br>
+          Name: ${txn.name}<br>
+          Transaction ID: ${txn.transactionId}<br>
+          Amount: ₹${txn.amount}<br>
+          Date & Time: ${txn.dateTime}</p><hr>`);
       });
-
-      const blob = new Blob([content], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "transactions.pdf";
-      link.click();
+      win.document.write('</body></html>');
+      win.document.close();
+      win.print();
     }
 
+    // Initial Load
+    updateBalance();
     renderTransactions();
-    updateBalanceDisplay();
   </script></body>
 </html>
