@@ -1,7 +1,8 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Personal Expense Tracker</title>
   <style>
     body {
@@ -35,6 +36,15 @@
       color: green;
       margin-bottom: 10px;
     }
+    .balance-edit {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .balance-edit input {
+      width: auto;
+      flex-grow: 1;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -48,6 +58,20 @@
     th {
       background: #ecf0f1;
     }
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    @media screen and (max-width: 600px) {
+      .balance-edit {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -55,40 +79,45 @@
     <h1>My Expense Tracker</h1>
   </header>
   <div class="container">
-    <div class="balance">
-      Total Balance: ₹<span id="balance">0</span>
+    <div class="balance-edit">
+      <div class="balance">Total Balance: ₹<span id="balance">0</span></div>
+      <input type="number" id="editBalance" placeholder="Edit Balance"/>
+      <button onclick="editBalance()">Save</button>
     </div>
     <input type="number" id="addBalance" placeholder="Add to Balance" />
-    <button onclick="addToBalance()">Add</button><h3>New Expense Entry</h3>
-<select id="type">
-  <option value="shop">Shop</option>
-  <option value="cab">Cab</option>
-  <option value="website">Website</option>
-  <option value="travel">Train/Bus/Flight</option>
-</select>
+    <button onclick="addToBalance()">Add</button>
 
-<input type="text" id="name" placeholder="Shop/Cab/Website/Travel Company Name" />
-<input type="text" id="product" placeholder="Product Name (if any)" />
-<input type="text" id="transactionId" placeholder="Transaction ID" />
-<input type="number" id="amount" placeholder="Amount" />
-<input type="datetime-local" id="datetime" />
-<button onclick="addExpense()">Add Expense</button>
+    <h3>New Expense Entry</h3>
+    <select id="type">
+      <option value="shop">Shop</option>
+      <option value="cab">Cab</option>
+      <option value="website">Website</option>
+      <option value="travel">Train/Bus/Flight</option>
+    </select>
+    <input type="text" id="name" placeholder="Shop/Cab/Website/Travel Company Name" />
+    <input type="text" id="product" placeholder="Product Name (if any)" />
+    <input type="text" id="transactionId" placeholder="Transaction ID" />
+    <input type="number" id="amount" placeholder="Amount" />
+    <input type="datetime-local" id="datetime" />
+    <button onclick="addExpense()">Add Expense</button>
 
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Name</th>
-      <th>Product</th>
-      <th>Transaction ID</th>
-      <th>Amount</th>
-      <th>Date & Time</th>
-    </tr>
-  </thead>
-  <tbody id="expenseList"></tbody>
-</table>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Name</th>
+          <th>Product</th>
+          <th>Transaction ID</th>
+          <th>Amount</th>
+          <th>Date & Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="expenseList"></tbody>
+    </table>
+  </div>
 
-  </div>  <script>
+  <script>
     let balance = parseFloat(localStorage.getItem('balance')) || 0;
     let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
 
@@ -100,7 +129,7 @@
     function renderExpenses() {
       const table = document.getElementById('expenseList');
       table.innerHTML = '';
-      expenses.forEach(exp => {
+      expenses.forEach((exp, index) => {
         const row = table.insertRow();
         row.innerHTML = `
           <td>${exp.type}</td>
@@ -109,6 +138,7 @@
           <td>${exp.transactionId}</td>
           <td>₹${parseFloat(exp.amount).toFixed(2)}</td>
           <td>${exp.datetime}</td>
+          <td><button class="delete-btn" onclick="deleteExpense(${index})">Delete</button></td>
         `;
       });
     }
@@ -119,6 +149,15 @@
         balance += addAmount;
         updateBalance();
         document.getElementById('addBalance').value = '';
+      }
+    }
+
+    function editBalance() {
+      const newBalance = parseFloat(document.getElementById('editBalance').value);
+      if (!isNaN(newBalance) && newBalance >= 0) {
+        balance = newBalance;
+        updateBalance();
+        document.getElementById('editBalance').value = '';
       }
     }
 
@@ -152,8 +191,17 @@
       }
     }
 
-    // Load on page load
+    function deleteExpense(index) {
+      balance += parseFloat(expenses[index].amount);
+      updateBalance();
+      expenses.splice(index, 1);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      renderExpenses();
+    }
+
+    // Initialize
     updateBalance();
     renderExpenses();
-  </script></body>
+  </script>
+</body>
 </html>
