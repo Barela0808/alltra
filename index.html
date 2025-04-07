@@ -43,6 +43,10 @@
       color: green;
       margin-bottom: 10px;
     }
+    .edit-balance {
+      margin-top: 5px;
+      font-size: 14px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -86,6 +90,7 @@
       }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <header>
@@ -95,8 +100,11 @@
     <div class="balance">
       Total Balance: ₹<span id="balance">0</span>
     </div>
-    <input type="number" id="addBalance" placeholder="Add to Balance" />
-    <button onclick="addToBalance()">Add</button><h3>New Expense Entry</h3>
+    <input type="number" id="editBalance" placeholder="Edit Total Balance" />
+    <button onclick="setBalance()">Set Balance</button><input type="number" id="addBalance" placeholder="Add to Balance" />
+<button onclick="addToBalance()">Add</button>
+
+<h3>New Expense Entry</h3>
 <select id="type">
   <option value="shop">Shop</option>
   <option value="cab">Cab</option>
@@ -110,6 +118,8 @@
 <input type="number" id="amount" placeholder="Amount" />
 <input type="datetime-local" id="datetime" />
 <button onclick="addExpense()">Add Expense</button>
+
+<button onclick="downloadPDF()">Download PDF</button>
 
 <table>
   <thead>
@@ -162,6 +172,15 @@
       }
     }
 
+    function setBalance() {
+      const newBalance = parseFloat(document.getElementById('editBalance').value);
+      if (!isNaN(newBalance)) {
+        balance = newBalance;
+        updateBalance();
+        document.getElementById('editBalance').value = '';
+      }
+    }
+
     function addExpense() {
       const type = document.getElementById('type').value;
       const name = document.getElementById('name').value;
@@ -198,6 +217,23 @@
       localStorage.setItem('expenses', JSON.stringify(expenses));
       updateBalance();
       renderExpenses();
+    }
+
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("My Expense Report", 10, 10);
+      let y = 20;
+      expenses.forEach((exp, i) => {
+        doc.text(${i+1}. ${exp.type.toUpperCase()} | ${exp.name} | ₹${exp.amount} | ${exp.datetime}, 10, y);
+        y += 10;
+        if (y > 280) {
+          doc.addPage();
+          y = 10;
+        }
+      });
+      doc.text(\nTotal Balance: ₹${balance.toFixed(2)}, 10, y + 10);
+      doc.save("expense_report.pdf");
     }
 
     updateBalance();
