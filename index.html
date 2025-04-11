@@ -36,10 +36,16 @@
       color: green;
       margin-bottom: 10px;
     }
+    .expense-total {
+      font-size: 1.2em;
+      color: #c0392b;
+      margin-bottom: 10px;
+    }
     .balance-edit {
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .balance-edit input {
       width: auto;
@@ -81,6 +87,7 @@
   <div class="container">
     <div class="balance-edit">
       <div class="balance">Total Balance: ₹<span id="balance">0</span></div>
+      <div class="expense-total">Total Expenses: ₹<span id="totalExpense">0</span></div>
       <input type="number" id="editBalance" placeholder="Edit Balance"/>
       <button onclick="editBalance()">Save</button>
     </div>
@@ -124,6 +131,11 @@
     function updateBalance() {
       document.getElementById('balance').innerText = balance.toFixed(2);
       localStorage.setItem('balance', balance);
+    }
+
+    function updateTotalExpense() {
+      let total = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+      document.getElementById('totalExpense').innerText = total.toFixed(2);
     }
 
     function renderExpenses() {
@@ -182,6 +194,7 @@
         localStorage.setItem('expenses', JSON.stringify(expenses));
 
         renderExpenses();
+        updateTotalExpense();
 
         document.getElementById('name').value = '';
         document.getElementById('product').value = '';
@@ -197,11 +210,13 @@
       expenses.splice(index, 1);
       localStorage.setItem('expenses', JSON.stringify(expenses));
       renderExpenses();
+      updateTotalExpense();
     }
 
     // Initialize
     updateBalance();
     renderExpenses();
+    updateTotalExpense();
   </script>
 </body>
 </html>
